@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0a0a0a;
+  color: #fafafa;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer utilities {
+  .bg-radial-gold {
+    background-image: radial-gradient(
+      ellipse at top,
+      rgba(245, 197, 66, 0.18) 0%,
+      rgba(245, 197, 66, 0) 60%
+    );
+  }
+  .text-shine-gold {
+    background: linear-gradient(
+      90deg,
+      #f5c542 0%,
+      #fff2b8 25%,
+      #f5c542 50%,
+      #fff2b8 75%,
+      #f5c542 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 3s linear infinite;
+  }
+  .grid-noise {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
