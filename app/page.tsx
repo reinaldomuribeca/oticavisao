@@ -6,11 +6,11 @@ import { CountdownTimer } from "@/components/CountdownTimer";
 import { Gift, Share2, Tv, AlertTriangle, Sparkles, Instagram } from "lucide-react";
 
 const RAFFLE_DATE =
-  process.env.NEXT_PUBLIC_RAFFLE_DATE ?? "2026-05-07T20:00:00-03:00";
+  process.env.NEXT_PUBLIC_RAFFLE_DATE ?? "2026-05-07T21:00:00-03:00";
 
 const REGRAS = [
   "É OBRIGATÓRIO seguir o Instagram @oticasvisaojp para participar do sorteio. Participantes que não seguirem o perfil serão desclassificados.",
-  "O sorteio será realizado AO VIVO na live do dia 07 de maio de 2026, com início às 20h00.",
+  "O sorteio será realizado AO VIVO na live do dia 07 de maio de 2026, com início às 21h00.",
   "O cadastro é GRATUITO e garante 1 número da sorte automaticamente.",
   "A cada amigo indicado que realizar o cadastro pelo seu link, você ganha +5 números adicionais.",
   "SÓ CONCORRE QUEM ESTIVER PRESENTE NA LIVE no momento do sorteio. Ausentes serão desclassificados automaticamente.",
@@ -92,7 +92,7 @@ export default function HomePage() {
             {
               icon: <Tv className="h-7 w-7" />,
               step: "03",
-              title: "Esteja na live 07/05 às 20h",
+              title: "Esteja na live 07/05 às 21h",
               desc: "O sorteio acontece ao vivo e só concorrem participantes presentes na live.",
             },
           ].map((s) => (
