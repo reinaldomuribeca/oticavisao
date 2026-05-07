@@ -58,6 +58,7 @@ create or replace function public.register_participant(
 ) returns json
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_locked        boolean;
@@ -137,6 +138,7 @@ create or replace function public.save_winner(p_winner integer)
 returns json
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_id uuid;
@@ -149,6 +151,12 @@ begin
   return json_build_object('ok', true, 'winner', p_winner);
 end;
 $$;
+
+-- save_winner é chamada apenas pelo backend (service role)
+revoke execute on function public.save_winner(integer) from public;
+revoke execute on function public.save_winner(integer) from anon;
+revoke execute on function public.save_winner(integer) from authenticated;
+grant  execute on function public.save_winner(integer) to service_role;
 
 -- =========================================================
 -- View: participants_with_stats
@@ -170,6 +178,9 @@ select
   (select pr.name from public.participants pr where pr.id = p.referred_by)
     as referrer_name
 from public.participants p;
+
+-- View avalia RLS/permissões do chamador, não do criador
+alter view public.participants_with_stats set (security_invoker = true);
 
 -- =========================================================
 -- RLS — habilitamos, mas todas as escritas/leituras sensíveis
