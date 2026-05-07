@@ -24,6 +24,7 @@ export function CountdownTimer({ targetISO }: { targetISO: string }) {
 
   useEffect(() => {
     setMounted(true);
+    setParts(diff(target));
     const id = setInterval(() => setParts(diff(target)), 1000);
     return () => clearInterval(id);
   }, [target]);
