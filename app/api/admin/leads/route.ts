@@ -8,7 +8,7 @@ const ALLOWED_SORT = new Set(["created_at", "name", "phone", "referral_count"]);
 const PAGE_SIZE = 20;
 
 export async function GET(req: Request) {
-  if (!isAdminAuthed()) {
+  if (!(await isAdminAuthed())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

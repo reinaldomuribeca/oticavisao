@@ -5,7 +5,7 @@ import { toCSV } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!isAdminAuthed()) {
+  if (!(await isAdminAuthed())) {
     return new Response("Unauthorized", { status: 401 });
   }
 

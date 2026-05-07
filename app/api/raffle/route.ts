@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * Protegido por admin (a página /admin/sorteio chama).
  */
 export async function GET() {
-  if (!isAdminAuthed()) {
+  if (!(await isAdminAuthed())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const supabase = getServiceSupabase();
@@ -49,7 +49,7 @@ export async function GET() {
  * POST { number } — persiste o vencedor.
  */
 export async function POST(req: Request) {
-  if (!isAdminAuthed()) {
+  if (!(await isAdminAuthed())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

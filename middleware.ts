@@ -10,7 +10,7 @@ const PUBLIC_API = new Set([
   "/api/admin/logout",
 ]);
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (PUBLIC_API.has(pathname)) {
@@ -18,7 +18,7 @@ export function middleware(req: NextRequest) {
   }
 
   const token = req.cookies.get(ADMIN_COOKIE)?.value;
-  if (!verifyAdminToken(token)) {
+  if (!(await verifyAdminToken(token))) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }

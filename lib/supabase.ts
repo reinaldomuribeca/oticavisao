@@ -4,6 +4,12 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
+// Next.js App Router faz cache de fetch determinístico por padrão. PostgREST
+// gera URLs determinísticas, então duas leituras consecutivas devolveriam o
+// mesmo snapshot. Forçamos no-store em todas as chamadas internas.
+const noStoreFetch: typeof fetch = (input, init) =>
+  fetch(input, { ...init, cache: "no-store" });
+
 /** Cliente público (browser ou SSR sem privilégios). */
 export function getBrowserSupabase(): SupabaseClient {
   if (!url || !anonKey) {
@@ -11,6 +17,7 @@ export function getBrowserSupabase(): SupabaseClient {
   }
   return createClient(url, anonKey, {
     auth: { persistSession: false },
+    global: { fetch: noStoreFetch },
   });
 }
 
@@ -21,6 +28,7 @@ export function getServiceSupabase(): SupabaseClient {
   }
   return createClient(url, serviceKey, {
     auth: { persistSession: false },
+    global: { fetch: noStoreFetch },
   });
 }
 
