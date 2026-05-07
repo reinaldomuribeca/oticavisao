@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, Instagram, AlertTriangle } from "lucide-react";
 import { CadastroForm } from "./CadastroForm";
 import { ReferralBanner } from "./ReferralBanner";
 
@@ -22,6 +22,38 @@ export default function CadastroPage() {
         <Suspense fallback={null}>
           <ReferralBanner />
         </Suspense>
+
+        {/* Aviso Instagram obrigatório */}
+        <a
+          href="https://www.instagram.com/oticasvisaojp"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-6 flex items-center gap-4 rounded-2xl border border-gold/50 bg-gradient-to-r from-gold/20 via-gold/8 to-transparent p-5 transition hover:border-gold hover:bg-gold/25"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gold text-ink-950">
+            <Instagram className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gold">
+              Requisito obrigatório
+            </p>
+            <p className="mt-0.5 font-display text-lg font-extrabold leading-tight text-zinc-100">
+              Siga <span className="text-gold">@oticasvisaojp</span> no Instagram
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-400">
+              Obrigatório para concorrer — clique aqui para seguir agora
+            </p>
+          </div>
+        </a>
+
+        {/* Alerta de regra */}
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+          <p className="text-sm font-semibold text-red-200">
+            Participantes que <span className="underline">não seguirem</span> o Instagram{" "}
+            <strong>@oticasvisaojp</strong> serão automaticamente desclassificados no momento do sorteio.
+          </p>
+        </div>
 
         <Card className="p-6 sm:p-10">
           <CardContent className="p-0">

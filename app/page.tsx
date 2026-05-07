@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CountdownTimer } from "@/components/CountdownTimer";
-import { Gift, Share2, Tv, AlertTriangle, Sparkles } from "lucide-react";
+import { Gift, Share2, Tv, AlertTriangle, Sparkles, Instagram } from "lucide-react";
 
 const RAFFLE_DATE =
   process.env.NEXT_PUBLIC_RAFFLE_DATE ?? "2026-05-07T20:00:00-03:00";
 
 const REGRAS = [
+  "É OBRIGATÓRIO seguir o Instagram @oticasvisaojp para participar do sorteio. Participantes que não seguirem o perfil serão desclassificados.",
   "O sorteio será realizado AO VIVO na live do dia 07 de maio de 2026, com início às 20h00.",
   "O cadastro é GRATUITO e garante 1 número da sorte automaticamente.",
   "A cada amigo indicado que realizar o cadastro pelo seu link, você ganha +5 números adicionais.",
@@ -122,7 +123,30 @@ export default function HomePage() {
           </h2>
         </div>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
+        {/* Destaque Instagram */}
+        <a
+          href="https://www.instagram.com/oticasvisaojp"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-10 flex items-center justify-center gap-4 rounded-2xl border border-gold/40 bg-gradient-to-r from-gold/15 via-gold/5 to-transparent p-6 transition hover:border-gold/70 hover:bg-gold/20"
+        >
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold text-ink-950">
+            <Instagram className="h-7 w-7" />
+          </div>
+          <div className="text-left">
+            <p className="text-xs font-semibold uppercase tracking-widest text-gold">
+              Obrigatório para participar
+            </p>
+            <p className="mt-0.5 font-display text-xl font-extrabold text-zinc-100">
+              Siga <span className="text-gold">@oticasvisaojp</span> no Instagram
+            </p>
+            <p className="mt-1 text-sm text-zinc-400">
+              Participantes que não seguirem o perfil serão desclassificados. Clique para seguir.
+            </p>
+          </div>
+        </a>
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {REGRAS.map((regra, i) => (
             <Card
               key={i}

@@ -15,6 +15,7 @@ export function CadastroForm() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [followsIG, setFollowsIG] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,6 +29,10 @@ export function CadastroForm() {
     }
     if (!isValidPhoneBR(phone)) {
       setError("Informe um WhatsApp válido com DDD.");
+      return;
+    }
+    if (!followsIG) {
+      setError("É obrigatório seguir @oticasvisaojp no Instagram para participar.");
       return;
     }
 
@@ -91,6 +96,30 @@ export function CadastroForm() {
           Usaremos pra entrar em contato caso você seja o vencedor.
         </p>
       </div>
+
+      {/* Checkbox Instagram obrigatório */}
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gold/30 bg-gold/5 p-4 transition hover:border-gold/60 hover:bg-gold/10">
+        <input
+          type="checkbox"
+          checked={followsIG}
+          onChange={(e) => setFollowsIG(e.target.checked)}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-yellow-400"
+        />
+        <span className="text-sm leading-snug text-zinc-200">
+          Confirmo que sigo{" "}
+          <a
+            href="https://www.instagram.com/oticasvisaojp"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-gold underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            @oticasvisaojp
+          </a>{" "}
+          no Instagram.{" "}
+          <span className="font-semibold text-red-400">(obrigatório)</span>
+        </span>
+      </label>
 
       {error && (
         <p className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-300">
