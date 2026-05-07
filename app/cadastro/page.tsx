@@ -46,13 +46,20 @@ export default function CadastroPage() {
           </div>
         </a>
 
-        {/* Alerta de regra */}
+        {/* Alerta de regras */}
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
-          <p className="text-sm font-semibold text-red-200">
-            Participantes que <span className="underline">não seguirem</span> o Instagram{" "}
-            <strong>@oticasvisaojp</strong> serão automaticamente desclassificados no momento do sorteio.
-          </p>
+          <div className="space-y-1.5 text-sm font-semibold text-red-200">
+            <p>
+              Participantes que <span className="underline">não seguirem</span> o Instagram{" "}
+              <strong>@oticasvisaojp</strong> serão automaticamente desclassificados no momento do sorteio.
+            </p>
+            <p>
+              É <span className="underline">vedado</span> realizar mais de um cadastro com números de telefone
+              diferentes. Todos os participantes serão conferidos e quem descumprir qualquer regra será{" "}
+              <strong>desclassificado</strong>.
+            </p>
+          </div>
         </div>
 
         <Card className="p-6 sm:p-10">

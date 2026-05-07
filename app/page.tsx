@@ -14,6 +14,7 @@ const REGRAS = [
   "O cadastro é GRATUITO e garante 1 número da sorte automaticamente.",
   "A cada amigo indicado que realizar o cadastro pelo seu link, você ganha +5 números adicionais.",
   "SÓ CONCORRE QUEM ESTIVER PRESENTE NA LIVE no momento do sorteio. Ausentes serão desclassificados automaticamente.",
+  "É VEDADO realizar mais de um cadastro com números de telefone diferentes. Realizaremos a conferência de todos os participantes e quem descumprir qualquer uma das regras será DESCLASSIFICADO.",
   "O número vencedor será sorteado AO VIVO, com total transparência, na plataforma de transmissão.",
   "A live será repleta de promoções exclusivas e imperdíveis.",
   "O resultado é definitivo e irrecorrível.",
