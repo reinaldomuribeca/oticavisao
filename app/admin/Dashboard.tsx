@@ -20,6 +20,7 @@ import {
   Download,
   LogOut,
   Search,
+  Trash2,
   Tv,
   Users,
   Ticket,
@@ -79,6 +80,8 @@ export function Dashboard() {
   const [sort, setSort] = useState("created_at");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -139,6 +142,24 @@ export function Dashboard() {
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
     window.location.href = "/admin";
+  }
+
+  async function handleDelete(id: string) {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/leads/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setLeads((prev) => prev.filter((l) => l.id !== id));
+        setTotal((prev) => prev - 1);
+        // Recarrega stats
+        fetch("/api/admin/stats")
+          .then((r) => r.json())
+          .then((d: Stats) => { setStats(d.stats); setConfig(d.config); });
+      }
+    } finally {
+      setConfirmDelete(null);
+      setDeleting(false);
+    }
   }
 
   return (
@@ -248,19 +269,20 @@ export function Dashboard() {
                 <TableHead>Indicações</TableHead>
                 <TableHead>Cadastrado em</TableHead>
                 <TableHead>Indicado por</TableHead>
+                <TableHead className="w-[120px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading && leads.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-zinc-500">
+                  <TableCell colSpan={7} className="py-10 text-center text-zinc-500">
                     Carregando…
                   </TableCell>
                 </TableRow>
               )}
               {!loading && leads.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-zinc-500">
+                  <TableCell colSpan={7} className="py-10 text-center text-zinc-500">
                     Nenhum lead encontrado.
                   </TableCell>
                 </TableRow>
@@ -293,6 +315,40 @@ export function Dashboard() {
                   </TableCell>
                   <TableCell className="text-sm text-zinc-400">
                     {l.referrer_name ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {confirmDelete === l.id ? (
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={deleting}
+                          onClick={() => handleDelete(l.id)}
+                          className="h-7 px-2 text-xs"
+                        >
+                          {deleting ? "…" : "Confirmar"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={deleting}
+                          onClick={() => setConfirmDelete(null)}
+                          className="h-7 px-2 text-xs"
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setConfirmDelete(l.id)}
+                        className="h-7 w-7 p-0 text-zinc-500 hover:text-red-400"
+                        title="Apagar lead"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
