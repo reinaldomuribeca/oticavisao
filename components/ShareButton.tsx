@@ -35,12 +35,19 @@ export function CopyLinkButton({ link }: { link: string }) {
   );
 }
 
-export function WhatsAppShareButton({ link }: { link: string }) {
+export function WhatsAppShareButton({
+  link,
+  whenText,
+}: {
+  link: string;
+  whenText?: string;
+}) {
+  const quando = whenText ? `no dia ${whenText}` : "em breve";
   const message = `🎉 Participe do sorteio comigo!
 Me cadastrei e estou concorrendo.
 Se você se cadastrar pelo meu link, eu ganho +5 números e você também entra no sorteio!
 👉 Clique aqui: ${link}
-O sorteio é AO VIVO na quinta, 07/05 às 20h, numa live cheia de promoções!`;
+O sorteio é AO VIVO ${quando}, numa live cheia de promoções!`;
   const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
   return (
     <Button

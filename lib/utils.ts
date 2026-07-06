@@ -44,6 +44,30 @@ export function toCSV(rows: Record<string, unknown>[], columns: string[]): strin
   return `${header}\n${body}`;
 }
 
+/**
+ * Data do sorteio formatada no horário de Brasília: "07/05 às 20h" (ou "20h30").
+ * Recebe um instante absoluto (ISO). Correta para qualquer fuso do dispositivo.
+ */
+export function formatRaffleDateShort(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "no dia do sorteio";
+  const date = d.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
+  const parts = new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Sao_Paulo",
+  }).formatToParts(d);
+  const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
+  const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
+  const time = mm === "00" ? `${hh}h` : `${hh}h${mm}`;
+  return `${date} às ${time}`;
+}
+
 export function classifyOriginCount(numbers: { origin: string }[]) {
   const cadastro = numbers.filter((n) => n.origin === "cadastro").length;
   const indicacao = numbers.filter((n) => n.origin === "indicacao").length;

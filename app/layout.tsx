@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
+import { getRaffleDateISO } from "@/lib/raffle-date";
+import { formatRaffleDateShort } from "@/lib/utils";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,20 +17,21 @@ const poppins = Poppins({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Sorteio AO VIVO — Ótica Visão",
-  description:
-    "Cadastre-se gratuitamente e concorra ao sorteio AO VIVO da Ótica Visão. Quinta, 07/05 às 20h.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
-  ),
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  const when = formatRaffleDateShort(await getRaffleDateISO());
+  return {
     title: "Sorteio AO VIVO — Ótica Visão",
-    description:
-      "Cadastro grátis. 1 número garantido + 5 números por amigo indicado. AO VIVO 07/05 às 20h.",
-    type: "website",
-  },
-};
+    description: `Cadastre-se gratuitamente e concorra ao sorteio AO VIVO da Ótica Visão. ${when}.`,
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
+    ),
+    openGraph: {
+      title: "Sorteio AO VIVO — Ótica Visão",
+      description: `Cadastro grátis. 1 número garantido + 5 números por amigo indicado. AO VIVO ${when}.`,
+      type: "website",
+    },
+  };
+}
 
 export default function RootLayout({
   children,

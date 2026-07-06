@@ -4,39 +4,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { Gift, Share2, Tv, AlertTriangle, Sparkles, Instagram } from "lucide-react";
-import { getServiceSupabase } from "@/lib/supabase";
-import { getActiveEdition } from "@/lib/editions";
+import { getRaffleDateISO } from "@/lib/raffle-date";
+import { formatRaffleDateShort } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const FALLBACK_RAFFLE_DATE =
-  process.env.NEXT_PUBLIC_RAFFLE_DATE ?? "2026-05-07T21:00:00-03:00";
-
-// Usa a data da edição ativa no contador; cai no fallback se não houver
-// edição ativa ou se ela ainda não tiver data definida.
-async function getRaffleDate(): Promise<string> {
-  try {
-    const active = await getActiveEdition(getServiceSupabase());
-    return active?.raffle_date ?? FALLBACK_RAFFLE_DATE;
-  } catch {
-    return FALLBACK_RAFFLE_DATE;
-  }
+// Regras do sorteio; a primeira usa a data real da edição ativa (`when`).
+function buildRegras(when: string): string[] {
+  return [
+    "É OBRIGATÓRIO seguir o Instagram @oticasvisaojp para participar do sorteio. Participantes que não seguirem o perfil serão desclassificados.",
+    `O sorteio será realizado AO VIVO na live do dia ${when}.`,
+    "O cadastro é GRATUITO e garante 1 número da sorte automaticamente.",
+    "A cada amigo indicado que realizar o cadastro pelo seu link, você ganha +5 números adicionais.",
+    "SÓ CONCORRE QUEM ESTIVER PRESENTE NA LIVE no momento do sorteio. Ausentes serão desclassificados automaticamente.",
+    "É VEDADO realizar mais de um cadastro com números de telefone diferentes. Realizaremos a conferência de todos os participantes e quem descumprir qualquer uma das regras será DESCLASSIFICADO.",
+    "O número vencedor será sorteado AO VIVO, com total transparência, na plataforma de transmissão.",
+    "A live será repleta de promoções exclusivas e imperdíveis.",
+    "O resultado é definitivo e irrecorrível.",
+  ];
 }
 
-const REGRAS = [
-  "É OBRIGATÓRIO seguir o Instagram @oticasvisaojp para participar do sorteio. Participantes que não seguirem o perfil serão desclassificados.",
-  "O sorteio será realizado AO VIVO na live do dia 07 de maio de 2026, com início às 21h00.",
-  "O cadastro é GRATUITO e garante 1 número da sorte automaticamente.",
-  "A cada amigo indicado que realizar o cadastro pelo seu link, você ganha +5 números adicionais.",
-  "SÓ CONCORRE QUEM ESTIVER PRESENTE NA LIVE no momento do sorteio. Ausentes serão desclassificados automaticamente.",
-  "É VEDADO realizar mais de um cadastro com números de telefone diferentes. Realizaremos a conferência de todos os participantes e quem descumprir qualquer uma das regras será DESCLASSIFICADO.",
-  "O número vencedor será sorteado AO VIVO, com total transparência, na plataforma de transmissão.",
-  "A live será repleta de promoções exclusivas e imperdíveis.",
-  "O resultado é definitivo e irrecorrível.",
-];
-
 export default async function HomePage() {
-  const raffleDate = await getRaffleDate();
+  const raffleDate = await getRaffleDateISO();
+  const when = formatRaffleDateShort(raffleDate);
+  const regras = buildRegras(when);
   return (
     <main className="relative isolate min-h-screen overflow-hidden">
       {/* Fundo dramático */}
@@ -108,7 +99,7 @@ export default async function HomePage() {
             {
               icon: <Tv className="h-7 w-7" />,
               step: "03",
-              title: "Esteja na live 07/05 às 21h",
+              title: `Esteja na live ${when}`,
               desc: "O sorteio acontece ao vivo e só concorrem participantes presentes na live.",
             },
           ].map((s) => (
@@ -164,7 +155,7 @@ export default async function HomePage() {
         </a>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {REGRAS.map((regra, i) => (
+          {regras.map((regra, i) => (
             <Card
               key={i}
               className="flex items-start gap-4 p-5 transition hover:border-gold/40"
