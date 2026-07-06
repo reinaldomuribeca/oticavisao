@@ -1,19 +1,24 @@
 import { isAdminAuthed } from "@/lib/admin-auth";
 import { getServiceSupabase } from "@/lib/supabase";
 import { toCSV } from "@/lib/utils";
+import { resolveEditionId } from "@/lib/editions";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   if (!(await isAdminAuthed())) {
     return new Response("Unauthorized", { status: 401 });
   }
 
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
+  const editionId = await resolveEditionId(supabase, new URL(req.url).searchParams.get("edition"));
+
+  let listQuery = supabase
     .from("participants_with_stats")
     .select("*")
     .order("created_at", { ascending: true });
+  if (editionId) listQuery = listQuery.eq("edition_id", editionId);
+  const { data, error } = await listQuery;
 
   if (error) {
     return new Response(`Erro: ${error.message}`, { status: 500 });

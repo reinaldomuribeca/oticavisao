@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthed } from "@/lib/admin-auth";
 import { getServiceSupabase } from "@/lib/supabase";
+import { resolveEditionId } from "@/lib/editions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +21,16 @@ export async function GET(req: Request) {
 
   const supabase = getServiceSupabase();
   const sortField = ALLOWED_SORT.has(sort) ? sort : "created_at";
+  const editionId = await resolveEditionId(supabase, url.searchParams.get("edition"));
+
+  if (!editionId) {
+    return NextResponse.json({ ok: true, leads: [], page, pageSize: PAGE_SIZE, total: 0 });
+  }
 
   let query = supabase
     .from("participants_with_stats")
-    .select("*", { count: "exact" });
+    .select("*", { count: "exact" })
+    .eq("edition_id", editionId);
 
   if (search) {
     const digits = search.replace(/\D+/g, "");
