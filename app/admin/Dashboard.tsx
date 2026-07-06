@@ -26,6 +26,7 @@ import {
   Ticket,
   UserPlus,
   Trophy,
+  Plus,
 } from "lucide-react";
 import { formatPhoneBR } from "@/lib/utils";
 
@@ -39,6 +40,18 @@ type Lead = {
   created_at: string;
 };
 
+type Edition = {
+  id: string;
+  name: string;
+  is_active: boolean;
+  cadastros_encerrados: boolean;
+  last_number: number;
+  winner_number: number | null;
+  drawn_at: string | null;
+  created_at: string;
+  closed_at: string | null;
+};
+
 type Stats = {
   ok: true;
   stats: {
@@ -47,11 +60,7 @@ type Stats = {
     referrals: number;
     top: { id: string; name: string; phone: string; referral_count: number } | null;
   };
-  config: {
-    winner_number: number | null;
-    drawn_at: string | null;
-    is_locked: boolean;
-  } | null;
+  edition: Edition | null;
 };
 
 type LeadsResp = {
@@ -71,7 +80,10 @@ const SORT_OPTIONS = [
 
 export function Dashboard() {
   const [stats, setStats] = useState<Stats["stats"] | null>(null);
-  const [config, setConfig] = useState<Stats["config"]>(null);
+  const [edition, setEdition] = useState<Edition | null>(null);
+  const [editions, setEditions] = useState<Edition[]>([]);
+  const [selectedEdition, setSelectedEdition] = useState<string>("");
+  const [busyEdition, setBusyEdition] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -85,18 +97,34 @@ export function Dashboard() {
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  // Carrega a lista de edições e seleciona a ativa
   useEffect(() => {
-    fetch("/api/admin/stats")
+    fetch("/api/admin/editions")
       .then((r) => r.json())
-      .then((d: Stats) => {
-        setStats(d.stats);
-        setConfig(d.config);
+      .then((d: { editions: Edition[] }) => {
+        setEditions(d.editions ?? []);
+        const active = (d.editions ?? []).find((e) => e.is_active);
+        setSelectedEdition((prev) => prev || active?.id || (d.editions?.[0]?.id ?? ""));
       });
   }, []);
 
+  // Stats da edição selecionada
   useEffect(() => {
+    if (!selectedEdition) return;
+    fetch(`/api/admin/stats?edition=${selectedEdition}`)
+      .then((r) => r.json())
+      .then((d: Stats) => {
+        setStats(d.stats);
+        setEdition(d.edition);
+      });
+  }, [selectedEdition]);
+
+  // Leads da edição selecionada
+  useEffect(() => {
+    if (!selectedEdition) return;
     setLoading(true);
     const url = new URL("/api/admin/leads", window.location.origin);
+    url.searchParams.set("edition", selectedEdition);
     url.searchParams.set("page", String(page));
     url.searchParams.set("sort", sort);
     url.searchParams.set("dir", dir);
@@ -109,7 +137,7 @@ export function Dashboard() {
         setPageSize(d.pageSize);
       })
       .finally(() => setLoading(false));
-  }, [page, sort, dir, q]);
+  }, [selectedEdition, page, sort, dir, q]);
 
   const cards = useMemo(
     () => [
@@ -151,14 +179,66 @@ export function Dashboard() {
       if (res.ok) {
         setLeads((prev) => prev.filter((l) => l.id !== id));
         setTotal((prev) => prev - 1);
-        // Recarrega stats
-        fetch("/api/admin/stats")
-          .then((r) => r.json())
-          .then((d: Stats) => { setStats(d.stats); setConfig(d.config); });
+        // Recarrega stats da edição atual
+        if (selectedEdition) {
+          fetch(`/api/admin/stats?edition=${selectedEdition}`)
+            .then((r) => r.json())
+            .then((d: Stats) => { setStats(d.stats); setEdition(d.edition); });
+        }
       }
     } finally {
       setConfirmDelete(null);
       setDeleting(false);
+    }
+  }
+
+  function refreshEditions() {
+    fetch("/api/admin/editions")
+      .then((r) => r.json())
+      .then((d: { editions: Edition[] }) => setEditions(d.editions ?? []));
+    if (selectedEdition) {
+      fetch(`/api/admin/stats?edition=${selectedEdition}`)
+        .then((r) => r.json())
+        .then((d: Stats) => { setStats(d.stats); setEdition(d.edition); });
+    }
+  }
+
+  async function createEdition() {
+    const name = window.prompt("Nome da nova edição (ex.: Live Agosto/2026):");
+    if (!name || !name.trim()) return;
+    setBusyEdition(true);
+    try {
+      const res = await fetch("/api/admin/editions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      const d = await res.json();
+      if (res.ok && d.edition_id) {
+        const list = await fetch("/api/admin/editions").then((r) => r.json());
+        setEditions(list.editions ?? []);
+        setSelectedEdition(d.edition_id);
+        setPage(1);
+      } else {
+        window.alert(d.message ?? "Erro ao criar edição.");
+      }
+    } finally {
+      setBusyEdition(false);
+    }
+  }
+
+  async function toggleLock() {
+    if (!edition) return;
+    setBusyEdition(true);
+    try {
+      const res = await fetch(`/api/admin/editions/${edition.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cadastros_encerrados: !edition.cadastros_encerrados }),
+      });
+      if (res.ok) refreshEditions();
+    } finally {
+      setBusyEdition(false);
     }
   }
 
@@ -180,7 +260,7 @@ export function Dashboard() {
             </Link>
           </Button>
           <Button asChild variant="secondary" size="lg">
-            <a href="/api/admin/export">
+            <a href={selectedEdition ? `/api/admin/export?edition=${selectedEdition}` : "/api/admin/export"}>
               <Download className="mr-2 h-4 w-4" /> EXPORTAR CSV
             </a>
           </Button>
@@ -190,17 +270,62 @@ export function Dashboard() {
         </div>
       </header>
 
-      {config?.winner_number != null && (
+      {/* Barra de edição */}
+      <div className="mb-8 flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-800 bg-ink-900/60 p-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+            Edição
+          </span>
+          <select
+            value={selectedEdition}
+            onChange={(e) => {
+              setSelectedEdition(e.target.value);
+              setPage(1);
+            }}
+            className="h-10 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-sm text-zinc-200"
+          >
+            {editions.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+                {e.is_active ? " (ativa)" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {edition && (
+          <Badge variant={edition.is_active ? "default" : "secondary"}>
+            {edition.is_active
+              ? edition.cadastros_encerrados
+                ? "Ativa · cadastros encerrados"
+                : "Ativa · cadastros abertos"
+              : "Encerrada"}
+          </Badge>
+        )}
+
+        <div className="ml-auto flex flex-wrap gap-2">
+          {edition?.is_active && (
+            <Button variant="secondary" size="sm" disabled={busyEdition} onClick={toggleLock}>
+              {edition.cadastros_encerrados ? "Reabrir cadastros" : "Encerrar cadastros"}
+            </Button>
+          )}
+          <Button variant="default" size="sm" disabled={busyEdition} onClick={createEdition}>
+            <Plus className="mr-1 h-4 w-4" /> Nova edição
+          </Button>
+        </div>
+      </div>
+
+      {edition?.winner_number != null && (
         <Card className="mb-8 border-emerald-500/30 bg-emerald-500/10 p-5">
           <p className="text-sm uppercase tracking-widest text-emerald-300">
-            🏆 Sorteio realizado
+            🏆 Sorteio realizado — {edition.name}
           </p>
           <p className="mt-1 font-display text-2xl font-extrabold text-emerald-100">
-            Número vencedor: #{String(config.winner_number).padStart(3, "0")}
+            Número vencedor: #{String(edition.winner_number).padStart(3, "0")}
           </p>
-          {config.drawn_at && (
+          {edition.drawn_at && (
             <p className="text-xs text-emerald-300/80">
-              {new Date(config.drawn_at).toLocaleString("pt-BR")}
+              {new Date(edition.drawn_at).toLocaleString("pt-BR")}
             </p>
           )}
         </Card>
