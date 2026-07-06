@@ -255,7 +255,7 @@ export function Dashboard() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="default" size="lg">
-            <Link href="/admin/sorteio">
+            <Link href={selectedEdition ? `/admin/sorteio?edition=${selectedEdition}` : "/admin/sorteio"}>
               <Tv className="mr-2 h-4 w-4" /> ABRIR SORTEADOR
             </Link>
           </Button>

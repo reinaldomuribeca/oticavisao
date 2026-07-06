@@ -52,10 +52,3 @@ export type RaffleNumber = {
   origin: "cadastro" | "indicacao";
   created_at: string;
 };
-
-export type RaffleConfig = {
-  id: string;
-  winner_number: number | null;
-  drawn_at: string | null;
-  is_locked: boolean;
-};
