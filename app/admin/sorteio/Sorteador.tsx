@@ -82,7 +82,11 @@ export function Sorteador() {
 
   // Restaura a preferência de espelhamento (persiste entre sessões)
   useEffect(() => {
-    setMirrored(localStorage.getItem("ov_sorteador_mirror") === "1");
+    try {
+      setMirrored(localStorage.getItem("ov_sorteador_mirror") === "1");
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   function toggleMirror() {
@@ -239,7 +243,7 @@ export function Sorteador() {
         onClick={toggleMirror}
         aria-pressed={mirrored}
         title="Espelhar a tela (para exibir corretamente na live, já que a câmera inverte a imagem)"
-        className={`fixed right-4 top-4 z-50 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-widest transition ${
+        className={`fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-widest transition ${
           mirrored
             ? "border-gold bg-gold text-ink-950"
             : "border-gold/30 bg-ink-900/80 text-gold/80 hover:border-gold/60"
