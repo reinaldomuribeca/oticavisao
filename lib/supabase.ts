@@ -39,8 +39,11 @@ export type Participant = {
   raffle_numbers: number[];
   referral_code: string;
   referred_by: string | null;
+  edition_id: string;
   created_at: string;
 };
+
+export type { Edition } from "@/lib/editions";
 
 export type RaffleNumber = {
   id: string;
