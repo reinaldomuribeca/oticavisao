@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   ArrowLeft,
+  FlipHorizontal,
   Loader2,
   PartyPopper,
   RefreshCcw,
@@ -69,6 +70,7 @@ export function Sorteador() {
   const [winner, setWinner] = useState<Winner | null>(null);
   const [typed, setTyped] = useState("");
   const [saving, setSaving] = useState(false);
+  const [mirrored, setMirrored] = useState(false);
 
   const tickRef = useRef<number | null>(null);
   const phaseTimers = useRef<number[]>([]);
@@ -77,6 +79,27 @@ export function Sorteador() {
   useEffect(() => {
     void refresh();
   }, []);
+
+  // Restaura a preferência de espelhamento (persiste entre sessões)
+  useEffect(() => {
+    try {
+      setMirrored(localStorage.getItem("ov_sorteador_mirror") === "1");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function toggleMirror() {
+    setMirrored((m) => {
+      const next = !m;
+      try {
+        localStorage.setItem("ov_sorteador_mirror", next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
 
   async function refresh() {
     setLoadingPool(true);
@@ -214,7 +237,25 @@ export function Sorteador() {
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(245,197,66,0.15),transparent_60%)]" />
       <div className="absolute inset-0 -z-10 grid-noise opacity-30" />
 
-      <header className="container flex items-center justify-between pt-6">
+      {/* Botão de espelhar — fica FORA do espelhamento, sempre clicável e legível */}
+      <button
+        type="button"
+        onClick={toggleMirror}
+        aria-pressed={mirrored}
+        title="Espelhar a tela (para exibir corretamente na live, já que a câmera inverte a imagem)"
+        className={`fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-widest transition ${
+          mirrored
+            ? "border-gold bg-gold text-ink-950"
+            : "border-gold/30 bg-ink-900/80 text-gold/80 hover:border-gold/60"
+        }`}
+      >
+        <FlipHorizontal className="h-4 w-4" />
+        {mirrored ? "Espelhado" : "Espelhar"}
+      </button>
+
+      {/* Conteúdo espelhável — flip horizontal para aparecer certo na live */}
+      <div style={mirrored ? { transform: "scaleX(-1)" } : undefined}>
+        <header className="container flex items-center justify-between pt-6">
         <Button asChild variant="ghost" size="sm">
           <Link href="/admin">
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao painel
@@ -406,6 +447,7 @@ export function Sorteador() {
             </Card>
           </motion.div>
         )}
+      </div>
       </div>
     </main>
   );
