@@ -95,6 +95,10 @@ export function Dashboard() {
   const [editions, setEditions] = useState<Edition[]>([]);
   const [selectedEdition, setSelectedEdition] = useState<string>("");
   const [busyEdition, setBusyEdition] = useState(false);
+  const [winners, setWinners] = useState<
+    { position: number; number: number; name: string; phone: string }[]
+  >([]);
+  const [totalDraws, setTotalDraws] = useState(1);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -132,6 +136,21 @@ export function Dashboard() {
       .then((d: Stats) => {
         setStats(d.stats);
         setEdition(d.edition);
+      });
+  }, [selectedEdition]);
+
+  // Ganhadores (todos os sorteios) da edição selecionada
+  useEffect(() => {
+    if (!selectedEdition) return;
+    fetch(`/api/raffle?edition=${selectedEdition}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setWinners(d.winners ?? []);
+        setTotalDraws(d.totalDraws ?? 1);
+      })
+      .catch(() => {
+        setWinners([]);
+        setTotalDraws(1);
       });
   }, [selectedEdition]);
 
@@ -440,19 +459,35 @@ export function Dashboard() {
         )}
       </div>
 
-      {edition?.winner_number != null && (
+      {winners.length > 0 && (
         <Card className="mb-8 border-emerald-500/30 bg-emerald-500/10 p-5">
-          <p className="text-sm uppercase tracking-widest text-emerald-300">
-            🏆 Sorteio realizado — {edition.name}
-          </p>
-          <p className="mt-1 font-display text-2xl font-extrabold text-emerald-100">
-            Número vencedor: #{String(edition.winner_number).padStart(3, "0")}
-          </p>
-          {edition.drawn_at && (
-            <p className="text-xs text-emerald-300/80">
-              {new Date(edition.drawn_at).toLocaleString("pt-BR")}
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm uppercase tracking-widest text-emerald-300">
+              🏆 {winners.length >= totalDraws ? "Sorteio concluído" : "Sorteio em andamento"}
+              {edition?.name ? ` — ${edition.name}` : ""}
             </p>
-          )}
+            <p className="text-xs text-emerald-300/80">
+              {winners.length} de {totalDraws} prêmio{totalDraws === 1 ? "" : "s"} sorteado
+              {winners.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <ul className="mt-4 space-y-2">
+            {winners.map((w) => (
+              <li
+                key={w.position}
+                className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-xs font-black text-emerald-950">
+                  {w.position}º
+                </span>
+                <span className="font-mono text-sm font-bold tabular-nums text-emerald-200">
+                  #{String(w.number).padStart(3, "0")}
+                </span>
+                <span className="font-display font-bold text-emerald-50">{w.name}</span>
+                <span className="text-xs text-emerald-300/70">{formatPhoneBR(w.phone)}</span>
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 
