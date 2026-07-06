@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
+import { getActiveEdition } from "@/lib/editions";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +12,15 @@ export async function GET(req: Request) {
   }
 
   const supabase = getServiceSupabase();
+  const activeEdition = await getActiveEdition(supabase);
+  if (!activeEdition) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
 
   const { data: participant, error } = await supabase
     .from("participants")
     .select("id, name, phone, referral_code, created_at")
+    .eq("edition_id", activeEdition.id)
     .eq("phone", phone)
     .maybeSingle();
 
