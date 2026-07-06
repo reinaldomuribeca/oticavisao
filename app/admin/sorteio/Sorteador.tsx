@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   ArrowLeft,
   FlipHorizontal,
@@ -77,9 +76,6 @@ export function Sorteador() {
   const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [configDraft, setConfigDraft] = useState("1");
-  const [savingConfig, setSavingConfig] = useState(false);
-
   const [mirrored, setMirrored] = useState(false);
 
   const tickRef = useRef<number | null>(null);
@@ -128,7 +124,6 @@ export function Sorteador() {
       setPool(d.pool ?? []);
       setEditionName(d.edition?.name ?? "");
       setTotalDraws(d.totalDraws ?? 1);
-      setConfigDraft(String(d.totalDraws ?? 1));
       setWinners(d.winners ?? []);
     } finally {
       setLoadingPool(false);
@@ -142,34 +137,6 @@ export function Sorteador() {
     }
     phaseTimers.current.forEach((id) => clearTimeout(id));
     phaseTimers.current = [];
-  }
-
-  async function saveConfig() {
-    const n = Math.trunc(Number(configDraft));
-    if (!Number.isFinite(n) || n < 1) {
-      setError("Informe um número de sorteios válido (mínimo 1).");
-      return;
-    }
-    setSavingConfig(true);
-    setError(null);
-    try {
-      const r = await fetch(`/api/raffle/config${editionQS()}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ total_draws: n }),
-      });
-      const d = await r.json();
-      if (r.ok) {
-        setTotalDraws(d.total_draws);
-        setConfigDraft(String(d.total_draws));
-      } else {
-        setError(d.message ?? "Não foi possível salvar a quantidade de sorteios.");
-      }
-    } catch {
-      setError("Falha de conexão ao salvar.");
-    } finally {
-      setSavingConfig(false);
-    }
   }
 
   async function startDraw() {
@@ -352,43 +319,13 @@ export function Sorteador() {
                   ? "Carregando..."
                   : allDone
                     ? "Todos os prêmios já foram sorteados."
-                    : "Configure a quantidade de sorteios e clique para sortear."}
+                    : "Tudo pronto. Clique para sortear o próximo prêmio."}
+              </p>
+              <p className="mt-1 text-xs text-zinc-600">
+                A quantidade de sorteios é definida no painel admin.
               </p>
 
-              {/* Configuração da quantidade de sorteios */}
-              <Card className="mt-8 border-gold/30 bg-ink-900/80 p-6 text-left">
-                <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
-                  Quantos sorteios (prêmios) nesta edição?
-                </p>
-                <div className="mt-3 flex items-center gap-3">
-                  <Input
-                    type="number"
-                    min={Math.max(1, drawnCount)}
-                    inputMode="numeric"
-                    value={configDraft}
-                    onChange={(e) => setConfigDraft(e.target.value)}
-                    className="w-28 text-center text-lg font-bold tabular-nums"
-                    aria-label="Quantidade de sorteios"
-                  />
-                  <Button
-                    variant="secondary"
-                    onClick={saveConfig}
-                    disabled={savingConfig}
-                  >
-                    {savingConfig ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Salvar"
-                    )}
-                  </Button>
-                  <span className="text-sm text-zinc-500">
-                    {drawnCount} de {totalDraws} já sorteado
-                    {drawnCount === 1 ? "" : "s"}
-                  </span>
-                </div>
-              </Card>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 <Card className="border-gold/30 bg-ink-900/80 p-6">
                   <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
                     Total de números

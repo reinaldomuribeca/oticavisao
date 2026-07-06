@@ -114,6 +114,8 @@ export function Dashboard() {
   const [newDate, setNewDate] = useState("");
   const [dateDraft, setDateDraft] = useState("");
   const [savingDate, setSavingDate] = useState(false);
+  const [drawsDraft, setDrawsDraft] = useState("1");
+  const [savingDraws, setSavingDraws] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -147,10 +149,12 @@ export function Dashboard() {
       .then((d) => {
         setWinners(d.winners ?? []);
         setTotalDraws(d.totalDraws ?? 1);
+        setDrawsDraft(String(d.totalDraws ?? 1));
       })
       .catch(() => {
         setWinners([]);
         setTotalDraws(1);
+        setDrawsDraft("1");
       });
   }, [selectedEdition]);
 
@@ -269,6 +273,32 @@ export function Dashboard() {
       }
     } finally {
       setBusyEdition(false);
+    }
+  }
+
+  async function saveTotalDraws() {
+    if (!selectedEdition) return;
+    const n = Math.trunc(Number(drawsDraft));
+    if (!Number.isFinite(n) || n < 1) {
+      window.alert("Informe um número de sorteios válido (mínimo 1).");
+      return;
+    }
+    setSavingDraws(true);
+    try {
+      const res = await fetch(`/api/raffle/config?edition=${selectedEdition}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ total_draws: n }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setTotalDraws(d.total_draws);
+        setDrawsDraft(String(d.total_draws));
+      } else {
+        window.alert(d.message ?? "Não foi possível salvar a quantidade de sorteios.");
+      }
+    } finally {
+      setSavingDraws(false);
     }
   }
 
@@ -410,6 +440,35 @@ export function Dashboard() {
               {edition.raffle_date
                 ? `Atual: ${new Date(edition.raffle_date).toLocaleString("pt-BR")}`
                 : "Sem data — o contador do site usa o valor padrão"}
+            </span>
+          </div>
+        )}
+
+        {/* Quantidade de sorteios (prêmios) da edição — usada no Sorteador */}
+        {edition && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-800 pt-3">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+              <Trophy className="h-4 w-4" /> Sorteios (prêmios)
+            </span>
+            <input
+              type="number"
+              min={Math.max(1, winners.length)}
+              value={drawsDraft}
+              onChange={(e) => setDrawsDraft(e.target.value)}
+              className="h-10 w-24 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-center text-sm font-bold tabular-nums text-zinc-200"
+              aria-label="Quantidade de sorteios"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={savingDraws || !drawsDraft}
+              onClick={saveTotalDraws}
+            >
+              {savingDraws ? "Salvando…" : "Salvar"}
+            </Button>
+            <span className="text-xs text-zinc-500">
+              {winners.length} de {totalDraws} já sorteado
+              {winners.length === 1 ? "" : "s"} · usado no Sorteador
             </span>
           </div>
         )}
