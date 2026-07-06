@@ -39,8 +39,11 @@ export type Participant = {
   raffle_numbers: number[];
   referral_code: string;
   referred_by: string | null;
+  edition_id: string;
   created_at: string;
 };
+
+export type { Edition } from "@/lib/editions";
 
 export type RaffleNumber = {
   id: string;
@@ -48,11 +51,4 @@ export type RaffleNumber = {
   number: number;
   origin: "cadastro" | "indicacao";
   created_at: string;
-};
-
-export type RaffleConfig = {
-  id: string;
-  winner_number: number | null;
-  drawn_at: string | null;
-  is_locked: boolean;
 };
