@@ -61,6 +61,8 @@ export function Sorteador() {
   const [pool, setPool] = useState<number[]>([]);
   const [savedWinner, setSavedWinner] = useState<Winner | null>(null);
   const [loadingPool, setLoadingPool] = useState(true);
+  const [editionId, setEditionId] = useState<string>("");
+  const [editionName, setEditionName] = useState<string>("");
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [displayed, setDisplayed] = useState<number | null>(null);
@@ -79,9 +81,13 @@ export function Sorteador() {
   async function refresh() {
     setLoadingPool(true);
     try {
-      const r = await fetch("/api/raffle");
+      const param = new URLSearchParams(window.location.search).get("edition");
+      const qs = param ? `?edition=${param}` : "";
+      const r = await fetch(`/api/raffle${qs}`);
       const d = await r.json();
       setPool(d.pool ?? []);
+      setEditionId(d.edition?.id ?? param ?? "");
+      setEditionName(d.edition?.name ?? "");
       if (d.winner) {
         setSavedWinner(d.winner);
         setPhase("saved");
@@ -142,7 +148,9 @@ export function Sorteador() {
 
         // Busca dados do vencedor pra mostrar o nome
         try {
-          const r = await fetch(`/api/raffle/lookup?number=${finalNumber}`);
+          const r = await fetch(
+            `/api/raffle/lookup?number=${finalNumber}${editionId ? `&edition=${editionId}` : ""}`,
+          );
           if (r.ok) {
             const d = await r.json();
             const w: Winner = {
@@ -174,7 +182,7 @@ export function Sorteador() {
     if (!winner) return;
     setSaving(true);
     try {
-      const r = await fetch("/api/raffle", {
+      const r = await fetch(`/api/raffle${editionId ? `?edition=${editionId}` : ""}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ number: winner.number }),
@@ -213,7 +221,7 @@ export function Sorteador() {
           </Link>
         </Button>
         <span className="text-xs uppercase tracking-[0.4em] text-gold/70">
-          Sorteador AO VIVO
+          {editionName ? `${editionName} · ` : ""}Sorteador AO VIVO
         </span>
       </header>
 
