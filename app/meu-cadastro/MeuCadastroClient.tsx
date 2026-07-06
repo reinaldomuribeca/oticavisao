@@ -8,7 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CopyLinkButton, WhatsAppShareButton } from "@/components/ShareButton";
-import { formatPhoneBR, isValidPhoneBR, onlyDigits } from "@/lib/utils";
+import {
+  formatPhoneBR,
+  formatRaffleDateShort,
+  isValidPhoneBR,
+  onlyDigits,
+} from "@/lib/utils";
 import { Loader2, PartyPopper, Search, Ticket } from "lucide-react";
 
 type MePayload = {
@@ -29,28 +34,6 @@ const baseUrl =
   (typeof window !== "undefined" ? window.location.origin : "") ||
   process.env.NEXT_PUBLIC_BASE_URL ||
   "";
-
-// Formata a data do sorteio no horário de Brasília: "dia 07/05 às 20h" / "às 20h30".
-// Vale para qualquer visitante, independente do fuso do dispositivo.
-function formatLiveDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "no dia do sorteio";
-  const date = d.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: "America/Sao_Paulo",
-  });
-  const parts = new Intl.DateTimeFormat("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "America/Sao_Paulo",
-  }).formatToParts(d);
-  const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
-  const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
-  const time = mm === "00" ? `${hh}h` : `${hh}h${mm}`;
-  return `dia ${date} às ${time}`;
-}
 
 export function MeuCadastroClient() {
   const params = useSearchParams();
@@ -151,7 +134,7 @@ export function MeuCadastroClient() {
   const sortedNumbers = [...data.raffle_numbers].sort((a, b) => a.number - b.number);
   const fallbackDate =
     process.env.NEXT_PUBLIC_RAFFLE_DATE ?? "2026-05-07T21:00:00-03:00";
-  const liveWhen = formatLiveDate(raffleDate ?? fallbackDate);
+  const when = formatRaffleDateShort(raffleDate ?? fallbackDate);
 
   return (
     <div className="space-y-6">
@@ -253,14 +236,14 @@ export function MeuCadastroClient() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <CopyLinkButton link={link} />
-            <WhatsAppShareButton link={link} />
+            <WhatsAppShareButton link={link} whenText={when} />
           </div>
         </CardContent>
       </Card>
 
       <Card className="border-red-500/30 bg-red-500/5 p-5">
         <p className="text-center text-sm font-semibold uppercase tracking-wider text-red-200">
-          ⚠️ Esteja na live {liveWhen} para concorrer!
+          ⚠️ Esteja na live no dia {when} para concorrer!
         </p>
       </Card>
     </div>
