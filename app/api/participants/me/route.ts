@@ -46,6 +46,7 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     ok: true,
+    raffle_date: activeEdition.raffle_date,
     participant: {
       ...participant,
       raffle_numbers: numbers ?? [],
