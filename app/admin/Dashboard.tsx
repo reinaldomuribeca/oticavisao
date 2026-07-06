@@ -27,8 +27,18 @@ import {
   UserPlus,
   Trophy,
   Plus,
+  CalendarClock,
 } from "lucide-react";
 import { formatPhoneBR } from "@/lib/utils";
+
+// ISO (instante absoluto) -> valor de <input type="datetime-local"> em hora local (Brasília, do navegador do admin)
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 type Lead = {
   id: string;
@@ -48,6 +58,7 @@ type Edition = {
   last_number: number;
   winner_number: number | null;
   drawn_at: string | null;
+  raffle_date: string | null;
   created_at: string;
   closed_at: string | null;
 };
@@ -94,6 +105,11 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showNewEdition, setShowNewEdition] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [dateDraft, setDateDraft] = useState("");
+  const [savingDate, setSavingDate] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -138,6 +154,11 @@ export function Dashboard() {
       })
       .finally(() => setLoading(false));
   }, [selectedEdition, page, sort, dir, q]);
+
+  // Mantém o campo de data em sincronia com a edição selecionada
+  useEffect(() => {
+    setDateDraft(toLocalInput(edition?.raffle_date ?? null));
+  }, [edition?.id, edition?.raffle_date]);
 
   const cards = useMemo(
     () => [
@@ -204,14 +225,16 @@ export function Dashboard() {
   }
 
   async function createEdition() {
-    const name = window.prompt("Nome da nova edição (ex.: Live Agosto/2026):");
-    if (!name || !name.trim()) return;
+    if (!newName.trim() || !newDate) return;
     setBusyEdition(true);
     try {
       const res = await fetch("/api/admin/editions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({
+          name: newName.trim(),
+          raffle_date: new Date(newDate).toISOString(),
+        }),
       });
       const d = await res.json();
       if (res.ok && d.edition_id) {
@@ -219,11 +242,34 @@ export function Dashboard() {
         setEditions(list.editions ?? []);
         setSelectedEdition(d.edition_id);
         setPage(1);
+        setShowNewEdition(false);
+        setNewName("");
+        setNewDate("");
       } else {
         window.alert(d.message ?? "Erro ao criar edição.");
       }
     } finally {
       setBusyEdition(false);
+    }
+  }
+
+  async function saveEditionDate() {
+    if (!edition || !dateDraft) return;
+    setSavingDate(true);
+    try {
+      const res = await fetch(`/api/admin/editions/${edition.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raffle_date: new Date(dateDraft).toISOString() }),
+      });
+      if (res.ok) {
+        refreshEditions();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        window.alert(d.message ?? "Erro ao salvar a data.");
+      }
+    } finally {
+      setSavingDate(false);
     }
   }
 
@@ -271,48 +317,127 @@ export function Dashboard() {
       </header>
 
       {/* Barra de edição */}
-      <div className="mb-8 flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-800 bg-ink-900/60 p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-            Edição
-          </span>
-          <select
-            value={selectedEdition}
-            onChange={(e) => {
-              setSelectedEdition(e.target.value);
-              setPage(1);
-            }}
-            className="h-10 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-sm text-zinc-200"
-          >
-            {editions.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-                {e.is_active ? " (ativa)" : ""}
-              </option>
-            ))}
-          </select>
+      <div className="mb-8 rounded-2xl border border-zinc-800 bg-ink-900/60 p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+              Edição
+            </span>
+            <select
+              value={selectedEdition}
+              onChange={(e) => {
+                setSelectedEdition(e.target.value);
+                setPage(1);
+              }}
+              className="h-10 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-sm text-zinc-200"
+            >
+              {editions.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                  {e.is_active ? " (ativa)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {edition && (
+            <Badge variant={edition.is_active ? "default" : "secondary"}>
+              {edition.is_active
+                ? edition.cadastros_encerrados
+                  ? "Ativa · cadastros encerrados"
+                  : "Ativa · cadastros abertos"
+                : "Encerrada"}
+            </Badge>
+          )}
+
+          <div className="ml-auto flex flex-wrap gap-2">
+            {edition?.is_active && (
+              <Button variant="secondary" size="sm" disabled={busyEdition} onClick={toggleLock}>
+                {edition.cadastros_encerrados ? "Reabrir cadastros" : "Encerrar cadastros"}
+              </Button>
+            )}
+            <Button
+              variant="default"
+              size="sm"
+              disabled={busyEdition}
+              onClick={() => setShowNewEdition((v) => !v)}
+            >
+              <Plus className="mr-1 h-4 w-4" /> Nova edição
+            </Button>
+          </div>
         </div>
 
+        {/* Data/hora do sorteio da edição selecionada (alimenta o contador do site) */}
         {edition && (
-          <Badge variant={edition.is_active ? "default" : "secondary"}>
-            {edition.is_active
-              ? edition.cadastros_encerrados
-                ? "Ativa · cadastros encerrados"
-                : "Ativa · cadastros abertos"
-              : "Encerrada"}
-          </Badge>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-800 pt-3">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+              <CalendarClock className="h-4 w-4" /> Data do sorteio
+            </span>
+            <input
+              type="datetime-local"
+              value={dateDraft}
+              onChange={(e) => setDateDraft(e.target.value)}
+              className="h-10 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-sm text-zinc-200"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={savingDate || !dateDraft}
+              onClick={saveEditionDate}
+            >
+              {savingDate ? "Salvando…" : "Salvar data"}
+            </Button>
+            <span className="text-xs text-zinc-500">
+              {edition.raffle_date
+                ? `Atual: ${new Date(edition.raffle_date).toLocaleString("pt-BR")}`
+                : "Sem data — o contador do site usa o valor padrão"}
+            </span>
+          </div>
         )}
 
-        <div className="ml-auto flex flex-wrap gap-2">
-          {edition?.is_active && (
-            <Button variant="secondary" size="sm" disabled={busyEdition} onClick={toggleLock}>
-              {edition.cadastros_encerrados ? "Reabrir cadastros" : "Encerrar cadastros"}
+        {/* Formulário de nova edição (nome + data/hora obrigatórios) */}
+        {showNewEdition && (
+          <div className="mt-3 flex flex-wrap items-end gap-3 border-t border-zinc-800 pt-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                Nome
+              </label>
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Ex.: Live Agosto/2026"
+                className="h-10 w-[240px]"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                Data e hora do sorteio
+              </label>
+              <input
+                type="datetime-local"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="h-10 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-sm text-zinc-200"
+              />
+            </div>
+            <Button
+              variant="default"
+              size="sm"
+              disabled={busyEdition || !newName.trim() || !newDate}
+              onClick={createEdition}
+            >
+              Criar edição
             </Button>
-          )}
-          <Button variant="default" size="sm" disabled={busyEdition} onClick={createEdition}>
-            <Plus className="mr-1 h-4 w-4" /> Nova edição
-          </Button>
-        </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busyEdition}
+              onClick={() => setShowNewEdition(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        )}
       </div>
 
       {edition?.winner_number != null && (

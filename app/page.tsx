@@ -4,9 +4,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { Gift, Share2, Tv, AlertTriangle, Sparkles, Instagram } from "lucide-react";
+import { getServiceSupabase } from "@/lib/supabase";
+import { getActiveEdition } from "@/lib/editions";
 
-const RAFFLE_DATE =
+export const dynamic = "force-dynamic";
+
+const FALLBACK_RAFFLE_DATE =
   process.env.NEXT_PUBLIC_RAFFLE_DATE ?? "2026-05-07T21:00:00-03:00";
+
+// Usa a data da edição ativa no contador; cai no fallback se não houver
+// edição ativa ou se ela ainda não tiver data definida.
+async function getRaffleDate(): Promise<string> {
+  try {
+    const active = await getActiveEdition(getServiceSupabase());
+    return active?.raffle_date ?? FALLBACK_RAFFLE_DATE;
+  } catch {
+    return FALLBACK_RAFFLE_DATE;
+  }
+}
 
 const REGRAS = [
   "É OBRIGATÓRIO seguir o Instagram @oticasvisaojp para participar do sorteio. Participantes que não seguirem o perfil serão desclassificados.",
@@ -20,7 +35,8 @@ const REGRAS = [
   "O resultado é definitivo e irrecorrível.",
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const raffleDate = await getRaffleDate();
   return (
     <main className="relative isolate min-h-screen overflow-hidden">
       {/* Fundo dramático */}
@@ -46,7 +62,7 @@ export default function HomePage() {
         </p>
 
         <div className="mt-10 sm:mt-14">
-          <CountdownTimer targetISO={RAFFLE_DATE} />
+          <CountdownTimer targetISO={raffleDate} />
         </div>
 
         <div className="mt-12 flex w-full max-w-xl flex-col gap-3 sm:flex-row">
