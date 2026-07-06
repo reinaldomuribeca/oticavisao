@@ -5,106 +5,66 @@ import { resolveEditionId } from "@/lib/editions";
 
 export const dynamic = "force-dynamic";
 
+type WinnerRow = {
+  position: number;
+  number: number;
+  drawn_at: string;
+  participant: { name: string; phone: string } | null;
+};
+
 /**
- * GET — info do sorteio da edição (pool de números, vencedor salvo, edição).
+ * GET — estado do sorteio da edição:
+ *   pool de números, edição, lista de ganhadores (na ordem sorteada) e o
+ *   total de sorteios configurado.
  */
 export async function GET(req: Request) {
   if (!(await isAdminAuthed())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const supabase = getServiceSupabase();
-  const editionId = await resolveEditionId(supabase, new URL(req.url).searchParams.get("edition"));
+  const editionId = await resolveEditionId(
+    supabase,
+    new URL(req.url).searchParams.get("edition"),
+  );
 
   if (!editionId) {
-    return NextResponse.json({ ok: true, pool: [], winner: null, edition: null });
+    return NextResponse.json({
+      ok: true,
+      pool: [],
+      edition: null,
+      winners: [],
+      totalDraws: 1,
+    });
   }
 
-  const [{ data: numbers }, { data: edition }] = await Promise.all([
-    supabase
-      .from("raffle_numbers")
-      .select("number")
-      .eq("edition_id", editionId)
-      .order("number", { ascending: true }),
-    supabase.from("editions").select("*").eq("id", editionId).maybeSingle(),
-  ]);
+  const [{ data: numbers }, { data: edition }, { data: winnerRows }] =
+    await Promise.all([
+      supabase
+        .from("raffle_numbers")
+        .select("number")
+        .eq("edition_id", editionId)
+        .order("number", { ascending: true }),
+      supabase.from("editions").select("*").eq("id", editionId).maybeSingle(),
+      supabase
+        .from("raffle_winners")
+        .select("position, number, drawn_at, participant:participants(name, phone)")
+        .eq("edition_id", editionId)
+        .order("position", { ascending: true }),
+    ]);
 
-  let winner: { number: number; name: string; phone: string } | null = null;
-  if (edition?.winner_number != null) {
-    const { data: rn } = await supabase
-      .from("raffle_numbers")
-      .select("participant_id")
-      .eq("edition_id", editionId)
-      .eq("number", edition.winner_number)
-      .maybeSingle();
-    if (rn?.participant_id) {
-      const { data: p } = await supabase
-        .from("participants")
-        .select("name,phone")
-        .eq("id", rn.participant_id)
-        .maybeSingle();
-      if (p) winner = { number: edition.winner_number, name: p.name, phone: p.phone };
-    }
-  }
+  const winners = ((winnerRows ?? []) as unknown as WinnerRow[]).map((w) => ({
+    position: w.position,
+    number: w.number,
+    name: w.participant?.name ?? "",
+    phone: w.participant?.phone ?? "",
+    drawn_at: w.drawn_at,
+  }));
 
   return NextResponse.json({
     ok: true,
     pool: (numbers ?? []).map((n) => n.number),
-    winner,
     edition: edition ?? null,
-  });
-}
-
-/**
- * POST { number } (?edition=) — persiste o vencedor na edição.
- */
-export async function POST(req: Request) {
-  if (!(await isAdminAuthed())) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-
-  let body: { number?: number };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-  }
-  const number = Number(body.number);
-  if (!Number.isFinite(number) || number <= 0) {
-    return NextResponse.json({ error: "invalid_number" }, { status: 400 });
-  }
-
-  const supabase = getServiceSupabase();
-  const editionId = await resolveEditionId(supabase, new URL(req.url).searchParams.get("edition"));
-  if (!editionId) {
-    return NextResponse.json({ error: "no_edition" }, { status: 400 });
-  }
-
-  const { data: rn } = await supabase
-    .from("raffle_numbers")
-    .select("participant_id")
-    .eq("edition_id", editionId)
-    .eq("number", number)
-    .maybeSingle();
-  if (!rn) {
-    return NextResponse.json({ error: "number_not_in_pool" }, { status: 400 });
-  }
-
-  const { error } = await supabase.rpc("save_winner", {
-    p_edition_id: editionId,
-    p_winner: number,
-  });
-  if (error) {
-    return NextResponse.json({ error: "server", message: error.message }, { status: 500 });
-  }
-
-  const { data: p } = await supabase
-    .from("participants")
-    .select("name,phone")
-    .eq("id", rn.participant_id)
-    .maybeSingle();
-
-  return NextResponse.json({
-    ok: true,
-    winner: { number, name: p?.name ?? "", phone: p?.phone ?? "" },
+    winners,
+    totalDraws: edition?.total_draws ?? 1,
   });
 }
