@@ -27,6 +27,7 @@ import {
   UserPlus,
   Trophy,
   Plus,
+  Pencil,
   CalendarClock,
 } from "lucide-react";
 import { formatPhoneBR } from "@/lib/utils";
@@ -110,6 +111,7 @@ export function Dashboard() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showNewEdition, setShowNewEdition] = useState(false);
+  const [showEditEdition, setShowEditEdition] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDate, setNewDate] = useState("");
   const [dateDraft, setDateDraft] = useState("");
@@ -405,6 +407,15 @@ export function Dashboard() {
                 {edition.cadastros_encerrados ? "Reabrir cadastros" : "Encerrar cadastros"}
               </Button>
             )}
+            {edition && (
+              <Button
+                variant={showEditEdition ? "default" : "secondary"}
+                size="sm"
+                onClick={() => setShowEditEdition((v) => !v)}
+              >
+                <Pencil className="mr-1 h-4 w-4" /> Editar edição
+              </Button>
+            )}
             <Button
               variant="default"
               size="sm"
@@ -416,60 +427,73 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Data/hora do sorteio da edição selecionada (alimenta o contador do site) */}
-        {edition && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-800 pt-3">
-            <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-zinc-500">
-              <CalendarClock className="h-4 w-4" /> Data do sorteio
-            </span>
-            <input
-              type="datetime-local"
-              value={dateDraft}
-              onChange={(e) => setDateDraft(e.target.value)}
-              className="h-10 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-sm text-zinc-200"
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={savingDate || !dateDraft}
-              onClick={saveEditionDate}
-            >
-              {savingDate ? "Salvando…" : "Salvar data"}
-            </Button>
-            <span className="text-xs text-zinc-500">
-              {edition.raffle_date
-                ? `Atual: ${new Date(edition.raffle_date).toLocaleString("pt-BR")}`
-                : "Sem data — o contador do site usa o valor padrão"}
-            </span>
-          </div>
-        )}
+        {/* Painel de edição da edição selecionada — data/hora e nº de sorteios */}
+        {edition && showEditEdition && (
+          <div className="mt-3 space-y-3 border-t border-zinc-800 pt-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-gold">
+              Editar edição — {edition.name}
+            </p>
 
-        {/* Quantidade de sorteios (prêmios) da edição — usada no Sorteador */}
-        {edition && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-800 pt-3">
-            <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-zinc-500">
-              <Trophy className="h-4 w-4" /> Sorteios (prêmios)
-            </span>
-            <input
-              type="number"
-              min={Math.max(1, winners.length)}
-              value={drawsDraft}
-              onChange={(e) => setDrawsDraft(e.target.value)}
-              className="h-10 w-24 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-center text-sm font-bold tabular-nums text-zinc-200"
-              aria-label="Quantidade de sorteios"
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={savingDraws || !drawsDraft}
-              onClick={saveTotalDraws}
-            >
-              {savingDraws ? "Salvando…" : "Salvar"}
-            </Button>
-            <span className="text-xs text-zinc-500">
-              {winners.length} de {totalDraws} já sorteado
-              {winners.length === 1 ? "" : "s"} · usado no Sorteador
-            </span>
+            {/* Data/hora do sorteio (alimenta o contador do site) */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex w-40 items-center gap-1 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                <CalendarClock className="h-4 w-4" /> Data do sorteio
+              </span>
+              <input
+                type="datetime-local"
+                value={dateDraft}
+                onChange={(e) => setDateDraft(e.target.value)}
+                className="h-10 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-sm text-zinc-200"
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={savingDate || !dateDraft}
+                onClick={saveEditionDate}
+              >
+                {savingDate ? "Salvando…" : "Salvar data"}
+              </Button>
+              <span className="text-xs text-zinc-500">
+                {edition.raffle_date
+                  ? `Atual: ${new Date(edition.raffle_date).toLocaleString("pt-BR")}`
+                  : "Sem data — o contador do site usa o valor padrão"}
+              </span>
+            </div>
+
+            {/* Quantidade de sorteios (prêmios) — usada no Sorteador */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex w-40 items-center gap-1 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                <Trophy className="h-4 w-4" /> Sorteios (prêmios)
+              </span>
+              <input
+                type="number"
+                min={Math.max(1, winners.length)}
+                value={drawsDraft}
+                onChange={(e) => setDrawsDraft(e.target.value)}
+                className="h-10 w-24 rounded-xl border border-zinc-700 bg-ink-900 px-3 text-center text-sm font-bold tabular-nums text-zinc-200"
+                aria-label="Quantidade de sorteios"
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={savingDraws || !drawsDraft}
+                onClick={saveTotalDraws}
+              >
+                {savingDraws ? "Salvando…" : "Salvar"}
+              </Button>
+              <span className="text-xs text-zinc-500">
+                {winners.length} de {totalDraws} já sorteado
+                {winners.length === 1 ? "" : "s"} · usado no Sorteador
+              </span>
+            </div>
+
+            {winners.length > 0 && (
+              <p className="text-xs text-amber-400/80">
+                Já há {winners.length} ganhador{winners.length === 1 ? "" : "es"} nesta
+                edição — não é possível reduzir abaixo de {winners.length}. Para diminuir,
+                zere os ganhadores no Sorteador.
+              </p>
+            )}
           </div>
         )}
 
