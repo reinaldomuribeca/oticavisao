@@ -9,6 +9,7 @@ export type Edition = {
   winner_number: number | null;
   drawn_at: string | null;
   raffle_date: string | null;
+  total_draws: number;
   created_at: string;
   closed_at: string | null;
 };
